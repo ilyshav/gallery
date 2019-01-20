@@ -1,7 +1,18 @@
 name := "gallery"
 scalaVersion := "2.12.8"
 
-val compilerOptions = Seq("-Ypartial-unification")
+val compilerOptions = Seq(
+  "-Ypartial-unification",
+  "-feature",
+  "-deprecation",
+  "-Yno-adapted-args",
+  "-Xfuture",
+  "-Ywarn-dead-code",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-value-discard",
+  "-Ywarn-unused",
+  "-language:higherKinds",
+)
 val commonDeps = Seq()
 
 val backendDeps = commonDeps ++ Seq(
