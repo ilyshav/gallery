@@ -4,9 +4,9 @@ scalaVersion := "2.12.8"
 val compilerOptions = Seq("-Ypartial-unification")
 val commonDeps = Seq()
 
-
-
 val backendDeps = commonDeps ++ Seq(
+  "org.slf4j"    % "slf4j-log4j12"        % Dependencies.slf4j,
+
   "org.http4s"   %% "http4s-dsl"          % Dependencies.http4s,
   "org.http4s"   %% "http4s-blaze-server" % Dependencies.http4s,
 

@@ -1,4 +1,4 @@
-package com.ilyshav
+package com.ilyshav.gallery
 
 import cats.effect.Sync
 
