@@ -3,16 +3,36 @@ package com.ilyshav.gallery
 import java.util.concurrent.Executors
 
 import cats.effect.{Bracket, ExitCode, IO, IOApp}
+import doobie.hikari.HikariTransactor
+
+import scala.concurrent.ExecutionContext
 
 object Gallery extends IOApp {
   val B = implicitly[Bracket[IO, Throwable]]
 
-  override def run(args: List[String]): IO[ExitCode] = B.bracket(IO(Executors.newCachedThreadPool())) { executor =>
+  override def run(args: List[String]): IO[ExitCode] =
     for {
       config <- Config.load[IO]
-      database <- Database.open[IO](config, executor)
-      service = new GalleryService[IO](config, database)
-      _ <- service.start()
-    } yield ExitCode.Success
-  } (executor => IO(executor.shutdown()))
+      r <- B.bracket(IO(Executors.newCachedThreadPool())) { executor =>
+        val executionContext = ExecutionContext.fromExecutor(executor)
+        HikariTransactor
+          .newHikariTransactor[IO](
+            driverClassName = "org.sqlite.JDBC",
+            url = s"jdbc:sqlite:file:${config.dbPath}",
+            user = "",
+            pass = "",
+            connectEC = executionContext,
+            transactEC = executionContext
+          )
+          .use { transactor =>
+            for {
+              config <- Config.load[IO]
+              database <- Database.open[IO](config, transactor)
+              service = new GalleryService[IO](config, database)
+              _ <- service.start()
+            } yield ExitCode.Success
+          }
+      }(executor => IO(executor.shutdown()))
+    } yield r
+
 }

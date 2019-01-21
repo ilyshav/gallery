@@ -5,11 +5,14 @@ import java.util.concurrent.TimeUnit
 
 import cats.effect.{Bracket, Sync, Timer}
 import com.ilyshav.gallery.Database
+import org.slf4j.LoggerFactory
 
 object ScanAlbums {
   import scala.collection.JavaConverters._
   import cats.syntax.flatMap._
   import cats.syntax.functor._
+
+  private val logger = LoggerFactory.getLogger(this.getClass)
 
   // todo close stream
   def fullScan[F[_]](albumsPath: Path, db: Database[F])(
@@ -17,17 +20,20 @@ object ScanAlbums {
       B: Bracket[F, Throwable],
       T: Timer[F]): F[Unit] =
     for {
+      _ <- F.delay(logger.debug("Open file system walker"))
       now <- T.clock.realTime(TimeUnit.SECONDS)
+      normalizedPath = albumsPath.normalize()
       r <- B.bracket(F.delay(Files.walk(albumsPath))) { walkerStream =>
         fs2.Stream
           .fromIterator(walkerStream.filter(p => Files.isDirectory(p)).iterator().asScala)
-          .covary[F] // todo filter out "." path
-          .map(p => p.relativize(albumsPath).normalize().toString)
+          .covary[F]
+          .map(p => normalizedPath.relativize(p).normalize().toString)
+          .filter(!_.isBlank)
           .evalMap(p => db.saveAlbum(p, now))
           .compile
           .drain
       }(walkerStream => F.delay {
-        println("closed")
+        logger.debug("Closing file system walker")
         walkerStream.close()
       })
     } yield r

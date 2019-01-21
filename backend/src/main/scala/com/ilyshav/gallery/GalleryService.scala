@@ -1,7 +1,5 @@
 package com.ilyshav.gallery
 
-import java.nio.file.Paths
-
 import cats.effect.{Sync, Timer}
 import com.ilyshav.gallery.process.ScanAlbums
 
