@@ -1,8 +1,6 @@
 package com.ilyshav.gallery
 
-import java.util.concurrent.ExecutorService
-
-import cats.effect.{Async, ContextShift, Resource, Sync}
+import cats.effect.{Async, ContextShift, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import doobie.hikari.HikariTransactor

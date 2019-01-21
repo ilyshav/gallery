@@ -14,7 +14,6 @@ object ScanAlbums {
 
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  // todo close stream
   def fullScan[F[_]](albumsPath: Path, db: Database[F])(
       implicit F: Sync[F],
       B: Bracket[F, Throwable],
