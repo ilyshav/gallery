@@ -1,11 +1,20 @@
 package com.ilyshav.gallery
 
+import java.nio.file.{Files, Path, Paths}
+
 import cats.effect.Sync
 
-class Config private() {
+class Config private () {
   import Config._
 
-  val galleryDir: String = sys.env(EnvVar.galleryDir)
+  val galleryDir: Path = {
+    val p = Paths.get(sys.env(EnvVar.galleryDir))
+    if (Files.exists(p)) p
+    else
+      throw new RuntimeException(
+        s"Albums dir (${sys.env(EnvVar.galleryDir)}) not exist")
+
+  }
   val dbPath: String = sys.env(EnvVar.databasePath)
 }
 
