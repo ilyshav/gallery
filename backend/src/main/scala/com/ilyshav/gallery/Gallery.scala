@@ -28,8 +28,8 @@ object Gallery extends IOApp {
             for {
               config <- Config.load[IO]
               database <- Database.open[IO](config, transactor)
-              service = new GalleryService[IO](config, database)
-              _ <- service.start()
+              service = new GalleryService(config, database)
+              _ <- service.start().compile.drain
             } yield ExitCode.Success
           }
       }(executor => IO(executor.shutdown()))

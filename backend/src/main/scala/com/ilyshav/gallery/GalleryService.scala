@@ -1,18 +1,37 @@
 package com.ilyshav.gallery
 
-import cats.effect.{Sync, Timer}
+import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
 import com.ilyshav.gallery.process.ScanAlbums
+import org.http4s.server.Router
 
-class GalleryService[F[_]: Timer](config: Config, db: Database[F])(implicit F: Sync[F]) {
-  import cats.syntax.flatMap._
-  import cats.syntax.functor._
-
-  def start(): F[Unit] = {
-    fullAlbumsScan()
+class GalleryService(config: Config, db: Database[IO])(
+    implicit timer: Timer[IO], e: ConcurrentEffect[IO], cs: ContextShift[IO]) {
+  def start(): fs2.Stream[IO, Unit] = {
+    fs2.Stream.emits(List(
+      fullAlbumsScan(),
+      httpService()
+    )).parJoinUnbounded
   }
 
-  private def fullAlbumsScan(): F[Unit] = for {
-    path <- F.delay(config.galleryDir)
-    result <- ScanAlbums.fullScan(path, db)
-  } yield result
+  private def fullAlbumsScan(): fs2.Stream[IO, Unit] =
+    for {
+      path <- fs2.Stream.eval(IO(config.galleryDir))
+      result <- fs2.Stream.eval(IO(ScanAlbums.fullScan(path, db))) // todo types to streams
+    } yield result
+
+  private def httpService()(implicit cs: ContextShift[IO]): fs2.Stream[IO, Unit] = {
+    import org.http4s.implicits._
+    import cats.effect._, org.http4s._, org.http4s.dsl.io._ // todo simplify
+    import org.http4s.server.blaze._
+
+    val routes = HttpRoutes.of[IO] {
+      case GET -> Root => Ok("hi there")
+    }
+
+    val httpApp = Router("/api" -> routes).orNotFound
+    val serverBuilder =
+      BlazeServerBuilder[IO].bindHttp(8080, "localhost").withHttpApp(httpApp)
+    serverBuilder.serve.map(_ => ())
+  }
+
 }
