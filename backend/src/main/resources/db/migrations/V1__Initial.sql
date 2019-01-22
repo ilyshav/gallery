@@ -1,6 +1,6 @@
 CREATE TABLE albums
 (
-    id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+    id nvarchar PRIMARY KEY NOT NULL,
     path nvarchar NOT NULL,
     lastCheck bigint
 );

@@ -1,5 +1,7 @@
 package com.ilyshav.gallery
 
+import java.util.UUID
+
 import cats.effect.{Async, ContextShift, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -15,10 +17,12 @@ class Database[F[_]: Async: ContextShift](config: Config, transactor: HikariTran
   private val logger = LoggerFactory.getLogger(this.getClass)
 
   def saveAlbum(path: String, checkTimestamp: Long): F[Unit] = {
+    val id = UUID.randomUUID().toString
+
     val sql =
       sql"""
-           | insert into albums(path, lastCheck)
-           | values ($path, $checkTimestamp) on conflict(path) do update set lastCheck=$checkTimestamp;
+           | insert into albums(id, path, lastCheck)
+           | values ($id, $path, $checkTimestamp) on conflict(path) do update set lastCheck=$checkTimestamp;
          """.stripMargin
 
     for {
@@ -28,9 +32,9 @@ class Database[F[_]: Async: ContextShift](config: Config, transactor: HikariTran
   }
 
   def getAlbums(): F[List[Album]] = {
-    val sql = sql"select path from albums"
+    val sql = sql"select id, path from albums"
 
-    sql.query[String].to[List].transact(transactor).map(_.map(Album.apply))
+    sql.query[Album].to[List].transact(transactor)
   }
 }
 

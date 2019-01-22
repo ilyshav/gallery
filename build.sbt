@@ -25,7 +25,8 @@ val backendDeps = commonDeps ++ Seq(
   "org.tpolecat" %% "doobie-core" % Dependencies.doobie,
   "org.tpolecat" %% "doobie-hikari" % Dependencies.doobie,
   "io.circe" %% "circe-core" % Dependencies.circe,
-  "io.circe" %% "circe-generic" % Dependencies.circe
+  "io.circe" %% "circe-generic" % Dependencies.circe,
+  "io.circe" %% "circe-generic-extras" % Dependencies.circe
 )
 
 val backend = project

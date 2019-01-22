@@ -1,7 +1,6 @@
 package com.ilyshav.gallery
 
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
-import com.ilyshav.gallery.Models.Album
 import com.ilyshav.gallery.process.ScanAlbums
 import org.http4s.server.Router
 
@@ -17,7 +16,7 @@ class GalleryService(config: Config, db: Database[IO])(
   private def fullAlbumsScan(): fs2.Stream[IO, Unit] =
     for {
       path <- fs2.Stream.eval(IO(config.galleryDir))
-      result <- fs2.Stream.eval(IO(ScanAlbums.fullScan(path, db))) // todo types to streams
+      result <- fs2.Stream.eval(ScanAlbums.fullScan(path, db))
     } yield result
 
   private def httpService()(implicit cs: ContextShift[IO]): fs2.Stream[IO, Unit] = {
