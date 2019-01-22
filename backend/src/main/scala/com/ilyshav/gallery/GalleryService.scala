@@ -1,6 +1,7 @@
 package com.ilyshav.gallery
 
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
+import com.ilyshav.gallery.Models.Album
 import com.ilyshav.gallery.process.ScanAlbums
 import org.http4s.server.Router
 
@@ -24,8 +25,12 @@ class GalleryService(config: Config, db: Database[IO])(
     import cats.effect._, org.http4s._, org.http4s.dsl.io._ // todo simplify
     import org.http4s.server.blaze._
 
+    import Encoders._
+    import org.http4s.circe.CirceEntityEncoder._
+
     val routes = HttpRoutes.of[IO] {
       case GET -> Root => Ok("hi there")
+      case GET -> Root / "albums" => Ok(db.getAlbums())
     }
 
     val httpApp = Router("/api" -> routes).orNotFound

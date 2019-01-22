@@ -3,10 +3,10 @@ package com.ilyshav.gallery
 import cats.effect.{Async, ContextShift, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
+import com.ilyshav.gallery.Models.Album
 import doobie.hikari.HikariTransactor
 import org.flywaydb.core.Flyway
 import org.slf4j.LoggerFactory
-
 import doobie.implicits.toSqlInterpolator
 import doobie.implicits.toConnectionIOOps
 
@@ -25,6 +25,12 @@ class Database[F[_]: Async: ContextShift](config: Config, transactor: HikariTran
       _ <- F.delay(logger.debug(s"Saving album: $path. Checked at $checkTimestamp"))
       _ <- sql.update.run.transact(transactor)
     } yield ()
+  }
+
+  def getAlbums(): F[List[Album]] = {
+    val sql = sql"select path from albums"
+
+    sql.query[String].to[List].transact(transactor).map(_.map(Album.apply))
   }
 }
 

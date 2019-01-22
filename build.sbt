@@ -16,18 +16,20 @@ val compilerOptions = Seq(
 val commonDeps = Seq()
 
 val backendDeps = commonDeps ++ Seq(
-  "org.slf4j"    % "slf4j-log4j12"        % Dependencies.slf4j,
-
-  "org.http4s"   %% "http4s-dsl"          % Dependencies.http4s,
-  "org.http4s"   %% "http4s-blaze-server" % Dependencies.http4s,
-
-  "org.xerial"   %  "sqlite-jdbc"         % Dependencies.sqliteJdbc,
-  "org.flywaydb" %  "flyway-core"         % Dependencies.flyway,
-  "org.tpolecat" %% "doobie-core"         % Dependencies.doobie,
-  "org.tpolecat" %% "doobie-hikari"       % Dependencies.doobie,
+  "org.slf4j" % "slf4j-log4j12" % Dependencies.slf4j,
+  "org.http4s" %% "http4s-dsl" % Dependencies.http4s,
+  "org.http4s" %% "http4s-circe" % Dependencies.http4s,
+  "org.http4s" %% "http4s-blaze-server" % Dependencies.http4s,
+  "org.xerial" % "sqlite-jdbc" % Dependencies.sqliteJdbc,
+  "org.flywaydb" % "flyway-core" % Dependencies.flyway,
+  "org.tpolecat" %% "doobie-core" % Dependencies.doobie,
+  "org.tpolecat" %% "doobie-hikari" % Dependencies.doobie,
+  "io.circe" %% "circe-core" % Dependencies.circe,
+  "io.circe" %% "circe-generic" % Dependencies.circe
 )
 
-val backend = project.in(file("backend"))
+val backend = project
+  .in(file("backend"))
   .settings(
     scalacOptions ++= compilerOptions,
     libraryDependencies ++= backendDeps

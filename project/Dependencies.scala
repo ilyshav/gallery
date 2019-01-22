@@ -4,4 +4,5 @@ object Dependencies {
   val doobie = "0.6.0"
   val sqliteJdbc = "3.25.2"
   val flyway = "5.2.4"
+  val circe = "0.10.0"
 }
