@@ -1,5 +1,7 @@
 package com.ilyshav.gallery
 
+import java.nio.file.Path
+
 import com.ilyshav.gallery.HttpModels.{AlbumDto, AlbumId, PhotoId}
 import io.circe.Encoder
 
@@ -13,6 +15,7 @@ object HttpModels {
 object PrivateModels {
   case class Album(id: AlbumId, path: String, name: String) {
     def toDto() = AlbumDto(id, name)
+    def fullPath(root: Path): Path = root.resolve(path)
   }
   case class Photo(id: PhotoId, fileName: String)
 }
