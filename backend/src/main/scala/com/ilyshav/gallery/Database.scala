@@ -6,7 +6,7 @@ import cats.effect.{Async, ContextShift, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import com.ilyshav.gallery.HttpModels.{AlbumId, PhotoId}
-import com.ilyshav.gallery.PrivateModels.Album
+import com.ilyshav.gallery.PrivateModels.{Album, Photo}
 import doobie.hikari.HikariTransactor
 import org.flywaydb.core.Flyway
 import org.slf4j.LoggerFactory
@@ -38,7 +38,7 @@ class Database[F[_]: Async: ContextShift](config: Config, transactor: HikariTran
     sql.query[Album].to[List].transact(transactor)
   }
 
-  def savePhoto(path: String, album: AlbumId): F[PhotoId] = {
+  def savePhoto(path: String, album: AlbumId): F[Photo] = {
     val id = UUID.randomUUID().toString
 
     val sql =
@@ -47,7 +47,7 @@ class Database[F[_]: Async: ContextShift](config: Config, transactor: HikariTran
            | values (${id}, ${path}, ${album.id})
          """.stripMargin
 
-    sql.update.run.transact(transactor).map(_ => PhotoId(id))
+    sql.update.run.transact(transactor).map(_ => Photo(PhotoId(id), path))
   }
 }
 

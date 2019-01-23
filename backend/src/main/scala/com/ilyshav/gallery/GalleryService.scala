@@ -1,7 +1,7 @@
 package com.ilyshav.gallery
 
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
-import com.ilyshav.gallery.process.SearchAlbums
+import com.ilyshav.gallery.process.{SearchAlbums, SearchPhotos}
 import org.http4s.server.Router
 
 class GalleryService(config: Config, db: Database[IO])(
@@ -16,8 +16,9 @@ class GalleryService(config: Config, db: Database[IO])(
   private def fullAlbumsScan(): fs2.Stream[IO, Unit] =
     for {
       path <- fs2.Stream.eval(IO(config.galleryDir))
-      result <- SearchAlbums.fullScan(path, db).map(_ => ())
-    } yield result
+      album <- SearchAlbums.fullScan(path, db)
+      photos <- SearchPhotos.run(album, db, path)
+    } yield ()
 
   private def httpService()(implicit cs: ContextShift[IO]): fs2.Stream[IO, Unit] = {
     import org.http4s.implicits._
