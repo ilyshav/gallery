@@ -1,6 +1,7 @@
 package com.ilyshav.gallery
 
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
+import com.ilyshav.gallery.HttpModels.AlbumId
 import com.ilyshav.gallery.process.{SearchAlbums, SearchPhotos}
 import org.http4s.server.Router
 
@@ -17,7 +18,7 @@ class GalleryService(config: Config, db: Database[IO])(
     for {
       path <- fs2.Stream.eval(IO(config.galleryDir))
       album <- SearchAlbums.fullScan(path, db)
-      photos <- SearchPhotos.run(album, db, path)
+      _ <- SearchPhotos.run(album, db, path)
     } yield ()
 
   private def httpService()(implicit cs: ContextShift[IO]): fs2.Stream[IO, Unit] = {
@@ -31,6 +32,8 @@ class GalleryService(config: Config, db: Database[IO])(
     val routes = HttpRoutes.of[IO] {
       case GET -> Root => Ok("hi there")
       case GET -> Root / "albums" => Ok(db.getAlbums().map(_.map(_.toDto())))
+      case GET -> Root / "photos" / albumId =>
+        Ok(db.getPhotos(AlbumId(albumId)).map(_.map(_.toDto())))
     }
 
     val httpApp = Router("/api" -> routes).orNotFound

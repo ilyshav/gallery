@@ -22,8 +22,8 @@ class Database[F[_]: Async: ContextShift](config: Config, transactor: HikariTran
 
     val sql =
       sql"""
-           | insert into albums(id, path, lastCheck)
-           | values ($id, $path, $checkTimestamp) on conflict(path) do update set lastCheck=$checkTimestamp;
+           | insert into albums(id, path, lastCheck, name)
+           | values ($id, $path, $checkTimestamp, $path) on conflict(path) do update set lastCheck=$checkTimestamp;
          """.stripMargin
 
     for {
@@ -33,7 +33,7 @@ class Database[F[_]: Async: ContextShift](config: Config, transactor: HikariTran
   }
 
   def getAlbums(): F[List[Album]] = {
-    val sql = sql"select id, path from albums"
+    val sql = sql"select id, path, name from albums"
 
     sql.query[Album].to[List].transact(transactor)
   }
@@ -48,6 +48,16 @@ class Database[F[_]: Async: ContextShift](config: Config, transactor: HikariTran
          """.stripMargin
 
     sql.update.run.transact(transactor).map(_ => Photo(PhotoId(id), path))
+  }
+
+  def getPhotos(album: AlbumId): F[List[Photo]] = {
+    val sql =
+      sql"""
+           |select p.id, p.realPath from photos p
+           |  join albums a on p.albumId = a.id and a.id = ${album.id}
+         """.stripMargin
+
+    sql.query[Photo].to[List].transact(transactor)
   }
 }
 
