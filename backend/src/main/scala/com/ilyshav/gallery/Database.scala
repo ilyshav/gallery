@@ -5,7 +5,8 @@ import java.util.UUID
 import cats.effect.{Async, ContextShift, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import com.ilyshav.gallery.Models.Album
+import com.ilyshav.gallery.HttpModels.{AlbumId, PhotoId}
+import com.ilyshav.gallery.PrivateModels.Album
 import doobie.hikari.HikariTransactor
 import org.flywaydb.core.Flyway
 import org.slf4j.LoggerFactory
@@ -16,7 +17,7 @@ class Database[F[_]: Async: ContextShift](config: Config, transactor: HikariTran
     implicit F: Sync[F]) {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  def saveAlbum(path: String, checkTimestamp: Long): F[Unit] = {
+  def saveAlbum(path: String, checkTimestamp: Long): F[Album] = {
     val id = UUID.randomUUID().toString
 
     val sql =
@@ -28,13 +29,25 @@ class Database[F[_]: Async: ContextShift](config: Config, transactor: HikariTran
     for {
       _ <- F.delay(logger.debug(s"Saving album: $path. Checked at $checkTimestamp"))
       _ <- sql.update.run.transact(transactor)
-    } yield ()
+    } yield Album(AlbumId(id), path, path)
   }
 
   def getAlbums(): F[List[Album]] = {
     val sql = sql"select id, path from albums"
 
     sql.query[Album].to[List].transact(transactor)
+  }
+
+  def savePhoto(path: String, album: AlbumId): F[PhotoId] = {
+    val id = UUID.randomUUID().toString
+
+    val sql =
+      sql"""
+           | insert into photos(id, realPath, albumId)
+           | values (${id}, ${path}, ${album.id})
+         """.stripMargin
+
+    sql.update.run.transact(transactor).map(_ => PhotoId(id))
   }
 }
 
