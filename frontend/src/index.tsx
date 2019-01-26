@@ -1,13 +1,13 @@
 import * as React from "react";
 import {render} from "react-dom";
 import {AppContainer} from "react-hot-loader";
-import App from "./components/App";
+import Albums from "./components/Albums";
 
 const rootEl = document.getElementById("root");
 
 render(
     <AppContainer>
-        <App/>
+        <Albums/>
     </AppContainer>,
     rootEl
 );
@@ -16,12 +16,12 @@ render(
 declare let module: { hot: any };
 
 if (module.hot) {
-    module.hot.accept("./components/App", () => {
-        const NewApp = require("./components/App").default;
+    module.hot.accept("./components/Albums", () => {
+        const Albums = require("./components/Albums").default;
 
         render(
             <AppContainer>
-                <NewApp/>
+                <Albums/>
             </AppContainer>,
             rootEl
         );
