@@ -14,7 +14,7 @@ object HttpModels {
 }
 
 object PrivateModels {
-  case class Album(id: AlbumId, path: String, name: String) {
+  case class Album(id: AlbumId, path: String, name: String, parent: Option[AlbumId]) {
     def toDto() = AlbumDto(id, name)
     def fullPath(root: Path): Path = root.resolve(path)
   }

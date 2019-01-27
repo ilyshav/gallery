@@ -17,19 +17,19 @@ class Database[F[_]: Async: ContextShift](config: Config, transactor: HikariTran
     implicit F: Sync[F]) {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  def saveAlbum(path: String, checkTimestamp: Long): F[Album] = {
+  def saveAlbum(path: String, checkTimestamp: Long, parent: Option[AlbumId]): F[Album] = {
     val id = UUID.randomUUID().toString
 
     val sql =
       sql"""
-           | insert into albums(id, path, lastCheck, name)
-           | values ($id, $path, $checkTimestamp, $path) on conflict(path) do update set lastCheck=$checkTimestamp;
+           | insert into albums(id, path, lastCheck, name, parentAlbumId)
+           | values ($id, $path, $checkTimestamp, $path, $parent) on conflict(path) do update set lastCheck=$checkTimestamp;
          """.stripMargin
 
     for {
       _ <- F.delay(logger.debug(s"Saving album: $path. Checked at $checkTimestamp"))
       _ <- sql.update.run.transact(transactor)
-    } yield Album(AlbumId(id), path, path)
+    } yield Album(AlbumId(id), path, path, parent)
   }
 
   def getAlbums(): F[List[Album]] = {
