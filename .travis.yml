@@ -4,5 +4,10 @@ scala:
 services:
   - docker
 
+before_script:
+   - cd frontend
+   - npm install
+   - cd ../
+
 script:
   - sbt ++$TRAVIS_SCALA_VERSION compile
