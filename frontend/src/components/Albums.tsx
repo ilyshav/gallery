@@ -1,5 +1,5 @@
 import * as React from "react";
-import { isError } from "util";
+import AlbumItem from "./AlbumItem";
 
 export interface AppProps {
 }
@@ -8,11 +8,6 @@ export interface AlbumsState {
     isLoading: boolean;
     isError: boolean;
     albums: Album[];
-}
-
-class Album {
-    id: string
-    name: string
 }
 
 export default class App extends React.Component<AppProps, AlbumsState> {
@@ -25,7 +20,6 @@ export default class App extends React.Component<AppProps, AlbumsState> {
     constructor(props) {
         super(props)
         const currentHost = location.protocol + '//' + location.host
-        console.log(currentHost + "/api/albums")
         fetch(currentHost + "/api/albums")
             .then (r => r.json())
             .then (data => {
@@ -52,7 +46,11 @@ export default class App extends React.Component<AppProps, AlbumsState> {
     loaded() {
         return (
             <div>
-                Albums. Loaded: {this.state.albums.length}
+                {
+                    this.state.albums.map(a => 
+                        <AlbumItem album={a} key={a.id}/>
+                    )
+                }
             </div>
         )
     }
