@@ -23,10 +23,10 @@
   },
   "homepage": "https://github.com/vikpe/react-webpack-typescript-starter",
   "scripts": {
-    "build": "yarn run clean-dist && webpack -p --config=configs/webpack/prod.js",
+    "build": "npm run clean-dist && webpack -p --config=configs/webpack/prod.js",
     "clean-dist": "rm -f -r -d dist",
     "lint": "tslint './src/**/*.ts*' --format stylish --force",
-    "start": "yarn run start-dev",
+    "start": "npm run start-dev",
     "start-dev": "webpack-dev-server --config=configs/webpack/dev.js --port 3000",
     "start-prod": "yarn run build && node express.js",
     "test": "jest --watch --coverage --config=configs/jest.json"
