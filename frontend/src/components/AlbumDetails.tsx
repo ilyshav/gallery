@@ -47,8 +47,6 @@ export default class AlbumDetails extends React.Component<AlbumProps, State> {
             <b>Albums</b>
             {this.state.albums.map(album => <AlbumPreview album={album} key={album.id}/>)}
         </div>)
-        // if (this.state.photos.length == 0) return (<div>pusto</div>)
-        // else return this.state.photos.map(photo => <PhotoPreview photo={photo} key={photo.id}/>)
     }
 
     render() {

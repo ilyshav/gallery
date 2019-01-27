@@ -9,4 +9,5 @@ CREATE TABLE albums
 );
 CREATE UNIQUE INDEX albums_path_uindex ON albums (path);
 
-insert into albums(id, path, lastCheck, name) values ('root', '', 0, 'root album');
+INSERT INTO albums(id, path, lastCheck, name) VALUES ('root', '', 0, 'root album');
+CREATE INDEX albums_parentAlbumId_index ON albums (parentAlbumId);

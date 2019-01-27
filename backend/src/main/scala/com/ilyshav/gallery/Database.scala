@@ -32,7 +32,6 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
     } yield Album(AlbumId(id), path, path, Some(parent))
   }
 
-  // todo add index on album.parent
   def getAlbums(parent: AlbumId = Album.root.id): F[List[Album]] = {
     val sql =
       sql"""
@@ -49,7 +48,7 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
     val sql =
       sql"""
            | insert into photos(id, realPath, albumId)
-           | values ({id}, ${path}, ${album.id})
+           | values (${id}, ${path}, ${album.id})
          """.stripMargin
 
     sql.update.run.transact(transactor).map(_ => Photo(PhotoId(id), path))
