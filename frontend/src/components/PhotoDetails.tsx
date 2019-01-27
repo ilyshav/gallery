@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Api } from "../Api";
 
 export class PhotoDetailsProps {
     photoId: string
@@ -14,6 +15,8 @@ export default class PhotoDetails extends React.Component<PhotoDetailsProps, any
         console.log("sdasd")
         console.log(this.props)
 
-        return <div>{this.props.photoId}</div>
+        const photoPath = Api.buildPath(`/static/photo/${this.props.photoId}`)
+
+        return <img src={photoPath}/>
     }
 }

@@ -25,12 +25,15 @@ object Gallery extends IOApp {
             transactEC = executionContext
           )
           .use { transactor =>
-            for {
-              config <- Config.load[IO]
-              database <- Database.open[IO](config, transactor)
-              service = new GalleryService(config, database)
-              _ <- service.start().compile.drain
-            } yield ExitCode.Success
+            B.bracket(IO(Executors.newFixedThreadPool(2))) { executor =>
+              val blockingEc = ExecutionContext.fromExecutor(executor)
+              for {
+                config <- Config.load[IO]
+                database <- Database.open[IO](config, transactor)
+                service = new GalleryService(config, database, blockingEc)
+                _ <- service.start().compile.drain
+              } yield ExitCode.Success
+            } (x => IO(x.shutdown()))
           }
       }(executor => IO(executor.shutdown()))
     } yield r

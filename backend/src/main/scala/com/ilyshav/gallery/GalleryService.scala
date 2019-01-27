@@ -1,12 +1,16 @@
 package com.ilyshav.gallery
 
+import java.io.File
+
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
-import com.ilyshav.gallery.HttpModels.{AlbumContent, AlbumId}
+import com.ilyshav.gallery.HttpModels.{AlbumContent, AlbumId, PhotoId}
 import com.ilyshav.gallery.PrivateModels.Album
 import com.ilyshav.gallery.process.Scanner
 import org.http4s.server.Router
 
-class GalleryService(config: Config, db: Database[IO])(
+import scala.concurrent.ExecutionContext
+
+class GalleryService(config: Config, db: Database[IO], blockingEc: ExecutionContext)(
     implicit timer: Timer[IO], e: ConcurrentEffect[IO], s: ContextShift[IO]) {
   def start(): fs2.Stream[IO, Unit] = {
     fs2.Stream.emits(List(
@@ -35,6 +39,10 @@ class GalleryService(config: Config, db: Database[IO])(
         Ok(getAlbum(None))
       case GET -> Root / "albums" / albumId =>
         Ok(getAlbum(Some(AlbumId(albumId))))
+      case r @ GET -> Root / "static" / "photo" / id =>
+        db.getPhoto(PhotoId(id)).flatMap(_.fold(NotFound()) { photo =>
+          StaticFile.fromFile(new File(photo.path), blockingEc, Some(r)).getOrElseF(NotFound())
+        })
     }
 
     val httpApp = Router("/api" -> routes).orNotFound
