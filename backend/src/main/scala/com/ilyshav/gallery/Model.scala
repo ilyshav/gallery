@@ -5,6 +5,7 @@ import java.nio.file.Path
 import com.ilyshav.gallery.HttpModels.{AlbumDto, AlbumId, PhotoDto, PhotoId}
 import io.circe.Encoder
 
+
 object HttpModels {
   case class AlbumId(id: String) extends AnyVal
   case class PhotoId(id: String) extends AnyVal
@@ -20,6 +21,15 @@ object PrivateModels {
   }
   case class Photo(id: PhotoId, path: String) {
     def toDto() = PhotoDto(id, path) // todo name
+  }
+
+  object Album {
+    val root: Album = new Album(
+      id = AlbumId("root")
+      , path = ""
+      , name = "root album"
+      , parent = None
+    )
   }
 }
 

@@ -17,7 +17,7 @@ class Database[F[_]: Async: ContextShift](config: Config, transactor: HikariTran
     implicit F: Sync[F]) {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  def saveAlbum(path: String, checkTimestamp: Long, parent: Option[AlbumId]): F[Album] = {
+  def saveAlbum(path: String, checkTimestamp: Long, parent: AlbumId): F[Album] = {
     val id = UUID.randomUUID().toString
 
     val sql =
@@ -29,7 +29,7 @@ class Database[F[_]: Async: ContextShift](config: Config, transactor: HikariTran
     for {
       _ <- F.delay(logger.debug(s"Saving album: $path. Checked at $checkTimestamp"))
       _ <- sql.update.run.transact(transactor)
-    } yield Album(AlbumId(id), path, path, parent)
+    } yield Album(AlbumId(id), path, path, Some(parent))
   }
 
   def getAlbums(): F[List[Album]] = {

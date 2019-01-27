@@ -8,3 +8,5 @@ CREATE TABLE albums
     CONSTRAINT album_to_parent_album___fk FOREIGN KEY (parentAlbumId) REFERENCES albums (id)
 );
 CREATE UNIQUE INDEX albums_path_uindex ON albums (path);
+
+insert into albums(id, path, lastCheck, name) values ('root', '', 0, 'root album');

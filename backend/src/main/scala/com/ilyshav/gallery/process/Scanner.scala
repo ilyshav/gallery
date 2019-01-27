@@ -20,11 +20,10 @@ object Scanner {
       implicit F: Sync[F],
       B: Bracket[F, Throwable],
       T: Timer[F]): fs2.Stream[F, Unit] = {
-    streamAux(galleryRoot, db, None)
+    streamAux(galleryRoot, db, Album.root)
   }
 
-  // todo add root album
-  def streamAux[F[_]](start: Path, db: Database[F], parent: Option[Album])(
+  def streamAux[F[_]](start: Path, db: Database[F], parent: Album)(
       implicit F: Sync[F],
       T: Timer[F]): Stream[F, Unit] = {
     for {
@@ -38,15 +37,12 @@ object Scanner {
           if (Files.isDirectory(path)) {
             val normalizedPath = start.relativize(path).normalize().toString
             Stream
-              .eval(db.saveAlbum(normalizedPath, now, parent.map(_.id)))
+              .eval(db.saveAlbum(normalizedPath, now, parent.id))
               .flatMap { album =>
-                streamAux(path, db, Some(album))
+                streamAux(path, db, album)
               }
           } else {
-            parent match {
-              case Some(album) => Stream.eval(processFile(path, album, db))
-              case None        => ???
-            }
+            Stream.eval(processFile(path, parent, db))
           }
         }
     } yield r
