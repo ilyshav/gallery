@@ -7,6 +7,7 @@ services:
 before_script:
    - cd frontend
    - npm install
+   - npm run-script build
    - cd ../
 
 script:
