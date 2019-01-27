@@ -17,19 +17,26 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
     implicit F: Sync[F]) {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  def saveAlbum(path: String, checkTimestamp: Long, parent: AlbumId): F[Album] = {
+  // todo bug: new id will be created for existing album
+  def saveAlbum(path: String,
+                checkTimestamp: Long,
+                parent: AlbumId): F[Album] = {
     val id = UUID.randomUUID().toString
 
-    val sql =
+    val selectSql = sql"select id from albums where path=$path"
+    val insertSql =
       sql"""
            | insert into albums(id, path, lastCheck, name, parentAlbumId)
            | values ($id, $path, $checkTimestamp, $path, $parent) on conflict(path) do update set lastCheck=$checkTimestamp;
          """.stripMargin
 
-    for {
-      _ <- F.delay(logger.debug(s"Saving album: $path. Checked at $checkTimestamp"))
-      _ <- sql.update.run.transact(transactor)
-    } yield Album(AlbumId(id), path, path, Some(parent))
+    selectSql.query[String].option.transact(transactor).flatMap { existingId =>
+      existingId.fold {
+        insertSql.update.run
+          .transact(transactor)
+          .map(_ => Album(AlbumId(id), path, path, Some(parent)))
+      }(id => F.delay(Album(AlbumId(id), path, path, Some(parent))))
+    }
   }
 
   def getAlbums(parent: AlbumId = Album.root.id): F[List[Album]] = {
@@ -47,7 +54,7 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
 
     val sql =
       sql"""
-           | insert into photos(id, realPath, albumId)
+           | insert or ignore into photos(id, realPath, albumId)
            | values (${id}, ${path}, ${album.id})
          """.stripMargin
 
@@ -63,12 +70,20 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
 
     sql.query[Photo].to[List].transact(transactor)
   }
+
+  def getPhoto(id: PhotoId): F[Option[Photo]] = {
+    val sql = sql"select p.id, p.realPath from photos p where p.id = ${id.id}"
+
+    sql.query[Photo].option.transact(transactor)
+  }
 }
 
 object Database {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  def open[F[_]: Async: ContextShift](config: Config, transactor: HikariTransactor[F]): F[Database[F]] =
+  def open[F[_]: Async: ContextShift](
+      config: Config,
+      transactor: HikariTransactor[F]): F[Database[F]] =
     for {
       _ <- applyMigrations(config.dbPath)
     } yield new Database[F](transactor)
