@@ -12,6 +12,8 @@ object HttpModels {
 
   case class AlbumDto(id: AlbumId, name: String)
   case class PhotoDto(id: PhotoId, name: String)
+
+  case class AlbumContent(albums: List[AlbumDto], photos: List[PhotoDto])
 }
 
 object PrivateModels {
@@ -43,4 +45,6 @@ object Encoders {
 
   implicit val albumEncoder: Encoder[AlbumDto] = deriveEncoder
   implicit val photoEncoder: Encoder[PhotoDto] = deriveEncoder
+
+  implicit val albumContent: Encoder[AlbumContent] = deriveEncoder
 }

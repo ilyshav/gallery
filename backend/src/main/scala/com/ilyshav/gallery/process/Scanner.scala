@@ -4,7 +4,7 @@ import java.nio.file.{Files, Path}
 import java.util.concurrent.TimeUnit
 
 import cats.Functor
-import cats.effect.{Bracket, Sync, Timer}
+import cats.effect.{Sync, Timer}
 import com.ilyshav.gallery.Database
 import com.ilyshav.gallery.PrivateModels.Album
 import org.slf4j.LoggerFactory
@@ -18,7 +18,6 @@ object Scanner {
 
   def stream[F[_]](galleryRoot: Path, db: Database[F])(
       implicit F: Sync[F],
-      B: Bracket[F, Throwable],
       T: Timer[F]): fs2.Stream[F, Unit] = {
     streamAux(galleryRoot, db, Album.root)
   }
@@ -50,10 +49,11 @@ object Scanner {
 
   def processFile[F[_]: Functor](path: Path,
                                  album: Album,
-                                 db: Database[F]): F[Unit] = {
+                                 db: Database[F])(implicit F: Sync[F]): F[Unit] = {
     import cats.syntax.functor._
 
-    db.savePhoto(path.toString, album.id).map(_ => ())
+    if (isSupported(path.getFileName.toString)) db.savePhoto(path.toString, album.id).map(_ => ())
+    else F.unit
   }
 
   private def isSupported(filename: String): Boolean = {
