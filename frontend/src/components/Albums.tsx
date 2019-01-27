@@ -1,5 +1,5 @@
 import * as React from "react";
-import AlbumItem from "./AlbumItem";
+import AlbumPreview from "./AlbumPreview";
 
 export interface AppProps {
 }
@@ -48,7 +48,7 @@ export default class App extends React.Component<AppProps, AlbumsState> {
             <div>
                 {
                     this.state.albums.map(a => 
-                        <AlbumItem album={a} key={a.id}/>
+                        <AlbumPreview album={a} key={a.id}/>
                     )
                 }
             </div>
