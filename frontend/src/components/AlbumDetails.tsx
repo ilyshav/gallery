@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Api } from "../Api";
+import PhotoPreview from "./PhotoPreview";
 
 export interface AlbumProps {
     albumId: string;
@@ -21,8 +22,6 @@ export default class AlbumDetails extends React.Component<AlbumProps, State> {
     constructor(props: AlbumProps) {
         super(props)
 
-        console.log(Api.buildPath(`/photos/${props.albumId}`))
-
         fetch(Api.buildPath(`/photos/${props.albumId}`))
             .then(r => r.json())
             .then(data => {
@@ -37,7 +36,7 @@ export default class AlbumDetails extends React.Component<AlbumProps, State> {
 
     renderLoaded() {
         if (this.state.photos.length == 0) return (<div>pusto</div>)
-        else return this.state.photos.map(photo => <div key={photo.id}> {photo.id} </div>)
+        else return this.state.photos.map(photo => <PhotoPreview photo={photo} key={photo.id}/>)
     }
 
     render() {

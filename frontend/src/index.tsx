@@ -5,10 +5,12 @@ import Albums from "./components/Albums";
 import {BrowserRouter as Router, Route} from "react-router-dom"
 import App from "./components/App";
 import AlbumDetails from "./components/AlbumDetails"
+import PhotoDetails from "./components/PhotoDetails";
 
 const rootEl = document.getElementById("root");
 
 const AlbumDetailsPage = ({ match }) => <AlbumDetails albumId={match.params.id} />;
+const PhotoDetailsPage = ({ match }) => <PhotoDetails photoId={match.params.id} />;
 
 render(
     <AppContainer>
@@ -17,6 +19,7 @@ render(
                 <Route exact path="/" component={App} />
                 <Route exact path="/albums" component={Albums} />
                 <Route path="/albums/:id" component={AlbumDetailsPage} />
+                <Route path="/photo/:id" component={PhotoDetailsPage} />
             </div>
         </Router>
     </AppContainer>,
