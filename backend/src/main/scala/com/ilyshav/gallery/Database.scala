@@ -17,7 +17,6 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
     implicit F: Sync[F]) {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  // todo bug: new id will be created for existing album
   def saveAlbum(path: String,
                 checkTimestamp: Long,
                 parent: AlbumId): F[Album] = {
