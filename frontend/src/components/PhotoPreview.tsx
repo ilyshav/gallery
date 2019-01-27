@@ -9,7 +9,6 @@ export default class PhotoPreview extends React.Component<PhotoPreviewProps, any
     render() {
         const ref = `/photo/${this.props.photo.id}`
 
-        console.log(ref)
         return (
             <div>
                 <Link to={ref}>

@@ -49,7 +49,7 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
     val sql =
       sql"""
            | insert into photos(id, realPath, albumId)
-           | values (${id}, ${path}, ${album.id})
+           | values ({id}, ${path}, ${album.id})
          """.stripMargin
 
     sql.update.run.transact(transactor).map(_ => Photo(PhotoId(id), path))
