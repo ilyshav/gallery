@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Api } from "../Api";
 import PhotoPreview from "./PhotoPreview";
+import AlbumPreview from "./AlbumPreview";
 
 export interface AlbumProps {
     albumId: string;
@@ -10,22 +11,27 @@ interface State {
     isLoading: boolean
     isError: boolean
     photos: Photo[]
+    albums: Album[]
 }
 
 export default class AlbumDetails extends React.Component<AlbumProps, State> {
     state = {
         isLoading: true,
         isError: false,
-        photos: []
+        photos: [],
+        albums: []
     }
 
     constructor(props: AlbumProps) {
         super(props)
 
-        fetch(Api.buildPath(`/photos/${props.albumId}`))
+        console.log("album details")
+        console.log(props)
+
+        fetch(Api.buildPath(`/albums/${props.albumId}`))
             .then(r => r.json())
             .then(data => {
-                this.setState({photos: data, isLoading: false})
+                this.setState({photos: data.photos, albums: data.albums, isLoading: false})
             })
             .catch(err => {
                 console.log(err) 
@@ -35,8 +41,12 @@ export default class AlbumDetails extends React.Component<AlbumProps, State> {
     }
 
     renderLoaded() {
-        if (this.state.photos.length == 0) return (<div>pusto</div>)
-        else return this.state.photos.map(photo => <PhotoPreview photo={photo} key={photo.id}/>)
+        return (<div>
+            <b>Photos</b>
+            {this.state.photos.map(photo => <PhotoPreview photo={photo} key={photo.id}/>)}
+            <b>Albums</b>
+            {this.state.albums.map(album => <AlbumPreview album={album} key={album.id}/>)}
+        </div>)
     }
 
     render() {
