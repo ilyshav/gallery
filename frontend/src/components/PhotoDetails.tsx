@@ -15,7 +15,7 @@ export default class PhotoDetails extends React.Component<PhotoDetailsProps, any
         console.log("sdasd")
         console.log(this.props)
 
-        const photoPath = Api.buildPath(`/static/photo/${this.props.photoId}`)
+        const photoPath = Api.buildStaticPath(`/static/photo/${this.props.photoId}`)
 
         return <img src={photoPath}/>
     }

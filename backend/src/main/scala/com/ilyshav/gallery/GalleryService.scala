@@ -10,13 +10,19 @@ import org.http4s.server.Router
 
 import scala.concurrent.ExecutionContext
 
-class GalleryService(config: Config, db: Database[IO], blockingEc: ExecutionContext)(
-    implicit timer: Timer[IO], e: ConcurrentEffect[IO], s: ContextShift[IO]) {
+class GalleryService(config: Config,
+                     db: Database[IO],
+                     blockingEc: ExecutionContext)(implicit timer: Timer[IO],
+                                                   e: ConcurrentEffect[IO],
+                                                   s: ContextShift[IO]) {
   def start(): fs2.Stream[IO, Unit] = {
-    fs2.Stream.emits(List(
-      fullScan(),
-      httpService()
-    )).parJoinUnbounded
+    fs2.Stream
+      .emits(
+        List(
+          fullScan(),
+          httpService()
+        ))
+      .parJoinUnbounded
   }
 
   private def fullScan(): fs2.Stream[IO, Unit] =
@@ -33,19 +39,31 @@ class GalleryService(config: Config, db: Database[IO], blockingEc: ExecutionCont
     import Encoders._
     import org.http4s.circe.CirceEntityEncoder._
 
-    val routes = HttpRoutes.of[IO] {
-      case GET -> Root => Ok("hi there")
+    val staticRoutes = HttpRoutes.of[IO] {
+      case r @ GET -> Root =>
+        StaticFile
+          .fromResource(s"/frontend/index.html", blockingEc, Some(r), true)
+          .getOrElseF(NotFound())
+      case r @ GET -> Root / "static" / "photo" / id =>
+        db.getPhoto(PhotoId(id))
+          .flatMap(_.fold(NotFound()) { photo =>
+            StaticFile
+              .fromFile(new File(photo.path), blockingEc, Some(r))
+              .getOrElseF(NotFound())
+          })
+      case r =>
+        StaticFile.fromResource(s"/frontend/${r.pathInfo}", blockingEc, Some(r), true)
+          .getOrElseF(NotFound())
+    }
+
+    val apiRoutes = HttpRoutes.of[IO] {
       case GET -> Root / "albums" =>
         Ok(getAlbum(None))
       case GET -> Root / "albums" / albumId =>
         Ok(getAlbum(Some(AlbumId(albumId))))
-      case r @ GET -> Root / "static" / "photo" / id =>
-        db.getPhoto(PhotoId(id)).flatMap(_.fold(NotFound()) { photo =>
-          StaticFile.fromFile(new File(photo.path), blockingEc, Some(r)).getOrElseF(NotFound())
-        })
     }
 
-    val httpApp = Router("/api" -> routes).orNotFound
+    val httpApp = Router("/" -> staticRoutes, "/api" -> apiRoutes).orNotFound
     val serverBuilder =
       BlazeServerBuilder[IO].bindHttp(8080, "localhost").withHttpApp(httpApp)
     serverBuilder.serve.map(_ => ())
@@ -59,8 +77,9 @@ class GalleryService(config: Config, db: Database[IO], blockingEc: ExecutionCont
     val albums = db.getAlbums(albumToLoad)
     val photos = db.getPhotos(albumToLoad)
 
-    (albums, photos).parMapN { case (albums, photos) =>
-      AlbumContent(albums.map(_.toDto()), photos.map(_.toDto()))
+    (albums, photos).parMapN {
+      case (albums, photos) =>
+        AlbumContent(albums.map(_.toDto()), photos.map(_.toDto()))
     }
   }
 }
