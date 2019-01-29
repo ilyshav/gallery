@@ -18,13 +18,13 @@ before_script:
 script:
    - sbt ++$TRAVIS_SCALA_VERSION backend/compile
    - sbt ++$TRAVIS_SCALA_VERSION backend/assembly
-   - docker build --tag "$IMAGE_NAME" . 
+   - docker build --tag $IMAGE_NAME . 
    - 
 before_deploy:
-  - docker login -u "$DOCKERHUB_LOGIN" -p "$DOCKERHUB_PASSWD"
-  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
+  - echo "$MY_PASSWORD" | docker login -u $DOCKERHUB_LOGIN --password-stdin
+  - docker tag $IMAGE_NAME ${IMAGE_NAME}:latest
 deploy:
   provider: script
-  script: docker push "${IMAGE_NAME}:latest"
+  script: docker push ${IMAGE_NAME}:latest
   on:
     branch: master
