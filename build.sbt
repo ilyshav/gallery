@@ -33,5 +33,6 @@ val backend = project
   .in(file("backend"))
   .settings(
     scalacOptions ++= compilerOptions,
-    libraryDependencies ++= backendDeps
+    libraryDependencies ++= backendDeps,
+    assemblyJarName in assembly := "galley.jar"
   )

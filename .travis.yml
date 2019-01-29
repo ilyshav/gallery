@@ -5,10 +5,15 @@ services:
   - docker
 
 before_script:
+   - mkdir backend/src/main/resources/frontend
    - cd frontend
    - npm install
    - npm run-script build
+   - cp -r dist/* ../backend/src/main/resources/frontend/
    - cd ../
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION compile
+  - sbt ++$TRAVIS_SCALA_VERSION backend/compile
+  - sbt ++$TRAVIS_SCALA_VERSION backend/assembly
+  - docker build .
+

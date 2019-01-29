@@ -6,3 +6,5 @@ target/
 frontend/node_modules/
 frontend/dist/
 backend/src/main/resources/frontend
+backend/.DS_Store
+.DS_Store
