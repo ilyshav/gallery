@@ -1,9 +1,13 @@
 language: scala
+env:
+  global:
+  - IMAGE_NAME=ilyavasin/gallery
+  - secure: P44kGrpLAgkE6HppoVbCqCEQmmR0n2P4cHRMlg+iTrJ3ogzLeKAO2nDjeB6Xp+5bobFd5YH2QqlQk8ns0pveACY9vWkPx7nsMiUgwiVbJ/OWdo4nXXhyiuMc7wqsc1r0GX7nHXNcTI2fOUQWHM8i6LkdtfgsmSBwBKXSAZyo5x7WyoUIM+5YsxlDFJVm/gcrY84kQ8PFr3HsocNyokH2o+AmE40PcSc9Ulc8E99/cSJvi6fs08NrT3FwS/3wLuWOMqsbyjM94MunvtV/cQGg/vYNeDxNzN+3hHavmH2sin9Zm8i9Pi+qNSxKhLsXPmHGCV5JKL9MPimsDtDadqdSpJjJ70KHxnuA5HHlLYW0zRbpM/RPw97yWryZRWxA6rjm2G9U79ytD5zkgz9CBfNYPlocYwMNFp463NZroimCDX7Z6Nii3gxA3dvieamM5dh8nkjeeWrTe86beHjvmC3ha9I897zl8PJiLf9+XE7wYN6svbwU9RKAQOJhpU6GziWsy1lhv2ATcgO7ry/qqSebnxhpPTFqeqnutjKcOHl3TJCF8VTvr+G3VS808+gKGYb/maENXWgZNcXyzEgSBv7Pplf+2Vq4lk08SYtaDHKOUvx3NSjNNP29P4YNkIAk12ZWRKAYeGe8oQHPGpK5R2S/eVt9rU9jHRihSg9Ie6UHWt4=
+  - secure: S+NkwDo+joTwNNvHl7rlOOcyV6YxkD3phfrSfM3v6cEs8Fz08vMKt1HUwsT6xSQvDV3fr+9hQfqxsIYNPdxuaz1CE0UIkbmwlR+VMqSyEJ2oVZ0RF8eEZZXfmnwrUOuBTAExjw0wCue9KQCjkp2XXtmIRhbG50Xxxsak85DK2eRJMNDbPnat4xy0SnBzlwSdHgceCvkaig5NlNMq/L+3vtXeTb5Ul835EDxZ0BkYfx2BydYdxKfKOg1gHJBXxpGfd3AHSbaT6gXVVlIsV358YfGim/CTsaJCAQtLENNIO05BpUAI6sfgSRNSm1P4PVi3cuXiYzl0FXgvTnZYgVTPr4uamlo9mRXSzgyfAQAe7WmRnqFxxRxT0n/3I9ufB8biCaZ+atRO23Je/FrseWdFjXXKowVV5kbeKPc1aJg3mabe3LSAIEXfgcJArMsuEsTDwOujoV3NXsxGt4T09tftIFArGrgboROmSs8XtGFk7WszyupPT9SbPrVNqjVhf7csB3kOgnWPIOJb/6fXJnGmorC2zfjdlvnIu9MiTClGjauGbYWJ9ErWRj0MGkI9T/rayK9bqmKFXbNM8N0WZs8hVUOAodWBF3jGDlRFbcz9iQA3DneEghC1hyFZ+ergLNq0Z5JPEmulXQNnFE71HUzz4pnT/CC0npA4ge4hTj/8+a0=
 scala:
    - 2.12.8
 services:
-  - docker
-
+   - docker
 before_script:
    - mkdir backend/src/main/resources/frontend
    - cd frontend
@@ -11,9 +15,16 @@ before_script:
    - npm run-script build
    - cp -r dist/* ../backend/src/main/resources/frontend/
    - cd ../
-
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION backend/compile
-  - sbt ++$TRAVIS_SCALA_VERSION backend/assembly
-  - docker build .
-
+   - sbt ++$TRAVIS_SCALA_VERSION backend/compile
+   - sbt ++$TRAVIS_SCALA_VERSION backend/assembly
+   - docker build --tag "$IMAGE_NAME" . 
+   - 
+before_deploy:
+  - docker login -u "$DOCKERHUB_LOGIN" -p "$DOCKERHUB_PASSWD"
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
+deploy:
+  provider: script
+  script: docker push "${IMAGE_NAME}:latest"
+  on:
+    branch: master
