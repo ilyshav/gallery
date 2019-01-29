@@ -21,7 +21,7 @@ script:
    - docker build --tag $IMAGE_NAME . 
    - 
 before_deploy:
-  - echo "$MY_PASSWORD" | docker login -u $DOCKERHUB_LOGIN --password-stdin
+  - echo $DOCKERHUB_PASSWD | docker login -u $DOCKERHUB_LOGIN --password-stdin
   - docker tag $IMAGE_NAME ${IMAGE_NAME}:latest
 deploy:
   provider: script
