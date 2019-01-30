@@ -1,5 +1,6 @@
 package com.ilyshav.gallery
 
+import java.time.Instant
 import java.util.UUID
 
 import cats.effect.{Async, ContextShift, Sync}
@@ -74,6 +75,18 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
     val sql = sql"select p.id, p.realPath from photos p where p.id = ${id.id}"
 
     sql.query[Photo].option.transact(transactor)
+  }
+
+  def getLastFullScan(): F[Option[Instant]] = {
+    val sql = sql"select lastFullScan from full_scan_metadata limit 1;"
+
+    sql.query[Long].option.transact(transactor).map(_.map(Instant.ofEpochSecond))
+  }
+
+  def setLastFullScan(ts: Long): F[Unit] = {
+    val sql = sql"insert into full_scan_metadata(lastFullScan) values (${ts});"
+
+    sql.update.run.transact(transactor).map(_ => ())
   }
 }
 

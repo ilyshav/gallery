@@ -40,10 +40,6 @@ class GalleryService(config: Config,
     import org.http4s.circe.CirceEntityEncoder._
 
     val staticRoutes = HttpRoutes.of[IO] {
-      case r @ GET -> Root =>
-        StaticFile
-          .fromResource(s"/frontend/index.html", blockingEc, Some(r), true)
-          .getOrElseF(NotFound())
       case r @ GET -> Root / "static" / "photo" / id =>
         db.getPhoto(PhotoId(id))
           .flatMap(_.fold(NotFound()) { photo =>
@@ -51,6 +47,10 @@ class GalleryService(config: Config,
               .fromFile(new File(photo.path), blockingEc, Some(r))
               .getOrElseF(NotFound())
           })
+      case r @ GET -> Root =>
+        StaticFile
+          .fromResource(s"/frontend/index.html", blockingEc, Some(r), true)
+          .getOrElseF(NotFound())
       case r =>
         StaticFile.fromResource(s"/frontend/${r.pathInfo}", blockingEc, Some(r), true)
           .getOrElseF(NotFound())
