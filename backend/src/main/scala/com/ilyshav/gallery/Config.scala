@@ -16,6 +16,7 @@ class Config private () {
 
   }
   val dbPath: String = sys.env(EnvVar.databasePath)
+  val port: Int = sys.env.get(EnvVar.httpPort).map(_.toInt).getOrElse(80)
 }
 
 object Config {
@@ -24,5 +25,6 @@ object Config {
   object EnvVar {
     val galleryDir = "GALLERY_PATH"
     val databasePath = "DB_PATH"
+    val httpPort = "HTTP_PORT"
   }
 }

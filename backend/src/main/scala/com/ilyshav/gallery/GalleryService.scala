@@ -65,7 +65,7 @@ class GalleryService(config: Config,
 
     val httpApp = Router("/" -> staticRoutes, "/api" -> apiRoutes).orNotFound
     val serverBuilder =
-      BlazeServerBuilder[IO].bindHttp(8080, "localhost").withHttpApp(httpApp)
+      BlazeServerBuilder[IO].bindHttp(config.port, "0.0.0.0").withHttpApp(httpApp)
     serverBuilder.serve.map(_ => ())
   }
 
