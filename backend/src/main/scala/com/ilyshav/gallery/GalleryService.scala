@@ -52,7 +52,7 @@ class GalleryService(config: Config,
           .fromResource(s"/frontend/index.html", blockingEc, Some(r), true)
           .getOrElseF(NotFound())
       case r =>
-        StaticFile.fromResource(s"/frontend/${r.pathInfo}", blockingEc, Some(r), true)
+        StaticFile.fromResource(s"/frontend${r.pathInfo}", blockingEc, Some(r), true)
           .getOrElseF(NotFound())
     }
 
