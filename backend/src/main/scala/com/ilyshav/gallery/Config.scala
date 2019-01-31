@@ -8,14 +8,15 @@ class Config private () {
   import Config._
 
   val galleryDir: Path = {
-    val p = Paths.get(sys.env(EnvVar.galleryDir))
+    val p = Paths.get(sys.env.getOrElse(EnvVar.galleryDir, "/data/gallery"))
+
     if (Files.exists(p)) p
     else
       throw new RuntimeException(
         s"Albums dir (${sys.env(EnvVar.galleryDir)}) not exist")
 
   }
-  val dbPath: String = sys.env(EnvVar.databasePath)
+  val dbPath: String = sys.env.getOrElse(EnvVar.databasePath, "/data/database") + "/gallery.db"
   val port: Int = sys.env.get(EnvVar.httpPort).map(_.toInt).getOrElse(80)
 }
 

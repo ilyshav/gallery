@@ -24,12 +24,16 @@ object Scanner {
     Stream.eval(db.getLastFullScan()).flatMap {
       case Some(_) => Stream.emit(()).covary[F]
       case None =>
-        streamAux(galleryRoot, db, Album.root) ++ Stream.eval {
-          for {
-            now <- T.clock.realTime(TimeUnit.SECONDS)
-            _ <- db.setLastFullScan(now)
-          } yield ()
-        }
+        Stream
+          .eval(Sync[F].delay(logger.info("Need to perform full scan")))
+          .flatMap { _ =>
+            streamAux(galleryRoot, db, Album.root) ++ Stream.eval {
+              for {
+                now <- T.clock.realTime(TimeUnit.SECONDS)
+                _ <- db.setLastFullScan(now)
+              } yield ()
+            }
+          } ++ Stream.eval(Sync[F].delay(logger.info("Full scan completed")))
     }
 
   def streamAux[F[_]](start: Path, db: Database[F], parent: Album)(
