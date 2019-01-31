@@ -13,7 +13,6 @@ before_script:
    - cd frontend
    - npm install
    - npm run-script build
-   - mkdir ../backend/src/main/resources/frontend/
    - cp -r dist/* ../backend/src/main/resources/frontend
    - cd ../
 script:
