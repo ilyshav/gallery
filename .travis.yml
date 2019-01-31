@@ -13,7 +13,8 @@ before_script:
    - cd frontend
    - npm install
    - npm run-script build
-   - cp -r dist/* ../backend/src/main/resources/frontend/
+   - mkdir ../backend/src/main/resources/frontend/
+   - cp -r dist/* ../backend/src/main/resources/frontend
    - cd ../
 script:
    - sbt ++$TRAVIS_SCALA_VERSION backend/compile
