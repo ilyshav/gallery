@@ -25,7 +25,7 @@ object Gallery extends IOApp {
             transactEC = executionContext
           )
           .use { transactor =>
-            B.bracket(IO(Executors.newFixedThreadPool(2))) { executor =>
+            B.bracket(IO(Executors.newCachedThreadPool())) { executor =>
               val blockingEc = ExecutionContext.fromExecutor(executor)
               for {
                 config <- Config.load[IO]

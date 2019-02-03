@@ -26,7 +26,7 @@ class GalleryService(config: Config,
   }
 
   private def fullScan(): fs2.Stream[IO, Unit] =
-    Scanner.stream(config, db)
+    Scanner.stream(config, db, blockingEc)
 
   private def httpService(): fs2.Stream[IO, Unit] = {
     import org.http4s.implicits._
