@@ -6,8 +6,8 @@ import java.util.UUID
 import cats.effect.{Async, ContextShift, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import com.ilyshav.gallery.HttpModels.{AlbumId, PhotoId}
-import com.ilyshav.gallery.PrivateModels.{Album, Photo}
+import com.ilyshav.gallery.HttpModels.{AlbumId, PhotoId, ThumbnailId}
+import com.ilyshav.gallery.PrivateModels.{Album, Photo, Thumbnail}
 import doobie.hikari.HikariTransactor
 import org.flywaydb.core.Flyway
 import org.slf4j.LoggerFactory
@@ -16,7 +16,6 @@ import doobie.implicits.toConnectionIOOps
 
 class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
     implicit F: Sync[F]) {
-  private val logger = LoggerFactory.getLogger(this.getClass)
 
   def saveAlbum(path: String,
                 checkTimestamp: Long,
@@ -58,13 +57,13 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
            | values (${id}, ${path}, ${album.id})
          """.stripMargin
 
-    sql.update.run.transact(transactor).map(_ => Photo(PhotoId(id), path))
+    sql.update.run.transact(transactor).map(_ => Photo(PhotoId(id), path, None))
   }
 
   def getPhotos(album: AlbumId): F[List[Photo]] = {
     val sql =
       sql"""
-           |select p.id, p.realPath from photos p
+           |select p.id, p.realPath, p.thumbnailId from photos p
            |  join albums a on p.albumId = a.id and a.id = ${album.id}
          """.stripMargin
 
@@ -72,7 +71,7 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
   }
 
   def getPhoto(id: PhotoId): F[Option[Photo]] = {
-    val sql = sql"select p.id, p.realPath from photos p where p.id = ${id.id}"
+    val sql = sql"select p.id, p.realPath, p.thumbnailId from photos p where p.id = ${id.id}"
 
     sql.query[Photo].option.transact(transactor)
   }
@@ -87,6 +86,24 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
     val sql = sql"insert into full_scan_metadata(lastFullScan) values (${ts});"
 
     sql.update.run.transact(transactor).map(_ => ())
+  }
+
+  def saveThumbnail(photoId: PhotoId, path: String): F[ThumbnailId] = {
+    val id = UUID.randomUUID().toString
+
+    val thumbnailSaveSql = sql"insert into thumbnails(id, realPath) values (${id}, ${path});"
+    val setThumbnailForPhotoSql = sql"update photos set thumbnailId=${id} where id=${photoId.id};"
+
+    (for {
+      _ <- thumbnailSaveSql.update.run
+      _ <- setThumbnailForPhotoSql.update.run
+    } yield ThumbnailId(id)).transact(transactor)
+  }
+
+  def getThumbnail(thumbnailId: ThumbnailId): F[Option[Thumbnail]] = {
+    val sql = sql"select id, realPath from thumbnails where id=${thumbnailId.id}"
+
+    sql.query[Thumbnail].option.transact(transactor)
   }
 }
 

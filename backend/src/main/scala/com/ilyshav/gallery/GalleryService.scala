@@ -3,7 +3,7 @@ package com.ilyshav.gallery
 import java.io.File
 
 import cats.effect.{ConcurrentEffect, ContextShift, IO, Timer}
-import com.ilyshav.gallery.HttpModels.{AlbumContent, AlbumId, PhotoId}
+import com.ilyshav.gallery.HttpModels.{AlbumContent, AlbumId, PhotoId, ThumbnailId}
 import com.ilyshav.gallery.PrivateModels.Album
 import com.ilyshav.gallery.process.Scanner
 import org.http4s.server.Router
@@ -26,10 +26,7 @@ class GalleryService(config: Config,
   }
 
   private def fullScan(): fs2.Stream[IO, Unit] =
-    for {
-      path <- fs2.Stream.eval(IO(config.galleryDir))
-      _ <- Scanner.stream(path, db)
-    } yield ()
+    Scanner.stream(config, db)
 
   private def httpService(): fs2.Stream[IO, Unit] = {
     import org.http4s.implicits._
@@ -45,6 +42,13 @@ class GalleryService(config: Config,
           .flatMap(_.fold(NotFound()) { photo =>
             StaticFile
               .fromFile(new File(photo.path), blockingEc, Some(r))
+              .getOrElseF(NotFound())
+          })
+      case r @ GET -> Root / "static" / "thumbnail" / id =>
+        db.getThumbnail(ThumbnailId(id))
+          .flatMap(_.fold(NotFound()) { thumbnail =>
+            StaticFile
+              .fromFile(new File(thumbnail.path), blockingEc, Some(r))
               .getOrElseF(NotFound())
           })
       case r @ GET -> Root =>
