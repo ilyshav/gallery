@@ -26,10 +26,7 @@ class GalleryService(config: Config,
   }
 
   private def fullScan(): fs2.Stream[IO, Unit] =
-    for {
-      path <- fs2.Stream.eval(IO(config.galleryDir))
-      _ <- Scanner.stream(path, db)
-    } yield ()
+    Scanner.stream(config, db)
 
   private def httpService(): fs2.Stream[IO, Unit] = {
     import org.http4s.implicits._

@@ -6,7 +6,7 @@ import java.util.UUID
 import cats.effect.{Async, ContextShift, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
-import com.ilyshav.gallery.HttpModels.{AlbumId, PhotoId}
+import com.ilyshav.gallery.HttpModels.{AlbumId, PhotoId, ThumbnailId}
 import com.ilyshav.gallery.PrivateModels.{Album, Photo}
 import doobie.hikari.HikariTransactor
 import org.flywaydb.core.Flyway
@@ -16,7 +16,6 @@ import doobie.implicits.toConnectionIOOps
 
 class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
     implicit F: Sync[F]) {
-  private val logger = LoggerFactory.getLogger(this.getClass)
 
   def saveAlbum(path: String,
                 checkTimestamp: Long,
@@ -87,6 +86,18 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
     val sql = sql"insert into full_scan_metadata(lastFullScan) values (${ts});"
 
     sql.update.run.transact(transactor).map(_ => ())
+  }
+
+  def saveThumbnail(photoId: PhotoId, path: String): F[ThumbnailId] = {
+    val id = UUID.randomUUID().toString
+
+    val thumbnailSaveSql = sql"insert into thumbnails(id, realPath) values (${id}, ${path});"
+    val setThumbnailForPhotoSql = sql"update photos set thumbnailId=${id} where id=${photoId.id};"
+
+    (for {
+      _ <- thumbnailSaveSql.update.run
+      _ <- setThumbnailForPhotoSql.update.run
+    } yield ThumbnailId(id)).transact(transactor)
   }
 }
 

@@ -5,4 +5,5 @@ object Dependencies {
   val sqliteJdbc = "3.25.2"
   val flyway = "5.2.4"
   val circe = "0.10.0"
+  val thumblinator = "0.4.8"
 }

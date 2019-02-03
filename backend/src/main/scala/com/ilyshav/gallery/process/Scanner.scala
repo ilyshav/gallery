@@ -4,12 +4,14 @@ import java.nio.file.{Files, Path}
 import java.util.concurrent.TimeUnit
 
 import cats.Functor
-import cats.effect.{Sync, Timer}
-import com.ilyshav.gallery.Database
-import com.ilyshav.gallery.PrivateModels.Album
+import cats.effect.{Concurrent, Sync, Timer}
+import com.ilyshav.gallery.{Config, Database}
+import com.ilyshav.gallery.PrivateModels.{Album, Photo}
 import org.slf4j.LoggerFactory
 import fs2.Stream
+import net.coobird.thumbnailator.Thumbnails
 
+// todo blocking ec for all operations here
 object Scanner {
   import cats.syntax.flatMap._
   import cats.syntax.functor._
@@ -19,7 +21,7 @@ object Scanner {
 
   val supportedFiles: Set[String] = Set("jpg", "png", "gif")
 
-  def stream[F[_]: Sync](galleryRoot: Path, db: Database[F])(
+  def stream[F[_]: Concurrent](config: Config, db: Database[F])(
       implicit T: Timer[F]): fs2.Stream[F, Unit] =
     Stream.eval(db.getLastFullScan()).flatMap {
       case Some(_) => Stream.emit(()).covary[F]
@@ -27,17 +29,19 @@ object Scanner {
         Stream
           .eval(Sync[F].delay(logger.info("Need to perform full scan")))
           .flatMap { _ =>
-            streamAux(galleryRoot, db, Album.root) ++ Stream.eval {
-              for {
-                now <- T.clock.realTime(TimeUnit.SECONDS)
-                _ <- db.setLastFullScan(now)
-              } yield ()
-            }
+            streamAux(config)(config.galleryRoot, db, Album.root) ++ Stream
+              .eval {
+                for {
+                  now <- T.clock.realTime(TimeUnit.SECONDS)
+                  _ <- db.setLastFullScan(now)
+                } yield ()
+              }
           } ++ Stream.eval(Sync[F].delay(logger.info("Full scan completed")))
     }
 
-  def streamAux[F[_]](start: Path, db: Database[F], parent: Album)(
-      implicit F: Sync[F],
+  private def streamAux[F[_]](
+      config: Config)(start: Path, db: Database[F], parent: Album)(
+      implicit F: Concurrent[F],
       T: Timer[F]): Stream[F, Unit] = {
     for {
       _ <- Stream.eval(F.delay(logger.debug("Open file system walker")))
@@ -52,23 +56,39 @@ object Scanner {
             Stream
               .eval(db.saveAlbum(normalizedPath, now, parent.id))
               .flatMap { album =>
-                streamAux(path, db, album)
+                streamAux(config)(path, db, album)
               }
           } else {
-            Stream.eval(processFile(path, parent, db))
+            Stream.eval(processFile(config)(path, parent, db))
           }
         }
     } yield r
   }
 
-  def processFile[F[_]: Functor](path: Path, album: Album, db: Database[F])(
-      implicit F: Sync[F]): F[Unit] = {
-    import cats.syntax.functor._
-
+  private def processFile[F[_]: Functor: Concurrent](
+      config: Config)(path: Path, album: Album, db: Database[F]): F[Unit] = {
     if (isSupported(path.getFileName.toString))
-      db.savePhoto(path.toString, album.id).map(_ => ())
-    else F.unit
+      db.savePhoto(path.toString, album.id).flatMap { photo =>
+        createThumbnail(config, db)(photo)
+      } else Concurrent[F].unit
   }
+
+  private def createThumbnail[F[_]: Concurrent](
+      config: Config,
+      db: Database[F])(photo: Photo): F[Unit] =
+    for {
+      thumbnailPath <- Sync[F].delay(
+        photo.thumbnailPath(config.galleryRoot, config.thumbnailsRoot))
+      _ <- Sync[F].delay(thumbnailPath.getParentFile.mkdirs())
+      _ <- Sync[F].delay {
+        Thumbnails
+          .of(photo.path)
+          .size(300, 300)
+          .outputFormat("jpeg")
+          .toFile(thumbnailPath)
+      }
+      _ <- db.saveThumbnail(photo.id, thumbnailPath.getAbsolutePath)
+    } yield ()
 
   private def isSupported(filename: String): Boolean = {
     supportedFiles.contains(filename.split('.').last)

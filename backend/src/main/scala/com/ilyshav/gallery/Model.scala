@@ -1,6 +1,7 @@
 package com.ilyshav.gallery
 
-import java.nio.file.Path
+import java.io.File
+import java.nio.file.{Path, Paths}
 
 import com.ilyshav.gallery.HttpModels.{AlbumDto, AlbumId, PhotoDto, PhotoId}
 import io.circe.Encoder
@@ -9,6 +10,7 @@ import io.circe.Encoder
 object HttpModels {
   case class AlbumId(id: String) extends AnyVal
   case class PhotoId(id: String) extends AnyVal
+  case class ThumbnailId(id: String) extends AnyVal
 
   case class AlbumDto(id: AlbumId, name: String)
   case class PhotoDto(id: PhotoId, name: String)
@@ -23,6 +25,11 @@ object PrivateModels {
   }
   case class Photo(id: PhotoId, path: String) {
     def toDto() = PhotoDto(id, path) // todo name
+    def thumbnailPath(galleryRoot: Path, thumbnailsRoot: Path): File = {
+      val photoPath = Paths.get(path)
+      val relative = galleryRoot.relativize(photoPath)
+      new File(s"$thumbnailsRoot/${relative.toString}")
+    }
   }
 
   object Album {
