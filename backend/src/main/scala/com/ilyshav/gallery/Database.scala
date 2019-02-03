@@ -7,7 +7,7 @@ import cats.effect.{Async, ContextShift, Sync}
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import com.ilyshav.gallery.HttpModels.{AlbumId, PhotoId, ThumbnailId}
-import com.ilyshav.gallery.PrivateModels.{Album, Photo}
+import com.ilyshav.gallery.PrivateModels.{Album, Photo, Thumbnail}
 import doobie.hikari.HikariTransactor
 import org.flywaydb.core.Flyway
 import org.slf4j.LoggerFactory
@@ -57,7 +57,7 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
            | values (${id}, ${path}, ${album.id})
          """.stripMargin
 
-    sql.update.run.transact(transactor).map(_ => Photo(PhotoId(id), path))
+    sql.update.run.transact(transactor).map(_ => Photo(PhotoId(id), path, None))
   }
 
   def getPhotos(album: AlbumId): F[List[Photo]] = {
@@ -98,6 +98,12 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
       _ <- thumbnailSaveSql.update.run
       _ <- setThumbnailForPhotoSql.update.run
     } yield ThumbnailId(id)).transact(transactor)
+  }
+
+  def getThumbnail(thumbnailId: ThumbnailId): F[Option[Thumbnail]] = {
+    val sql = sql"select id, realPath from thumbnails where id=${thumbnailId.id}"
+
+    sql.query[Thumbnail].option.transact(transactor)
   }
 }
 
