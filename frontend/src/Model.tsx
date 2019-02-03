@@ -6,6 +6,7 @@ class Album {
 class Photo {
     id: string
     name: string
+    thumbnail?: string
 }
 
 class AlbumData {

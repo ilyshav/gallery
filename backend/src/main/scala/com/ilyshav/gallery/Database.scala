@@ -63,7 +63,7 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
   def getPhotos(album: AlbumId): F[List[Photo]] = {
     val sql =
       sql"""
-           |select p.id, p.realPath from photos p
+           |select p.id, p.realPath, p.thumbnailId from photos p
            |  join albums a on p.albumId = a.id and a.id = ${album.id}
          """.stripMargin
 
@@ -71,7 +71,7 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
   }
 
   def getPhoto(id: PhotoId): F[Option[Photo]] = {
-    val sql = sql"select p.id, p.realPath from photos p where p.id = ${id.id}"
+    val sql = sql"select p.id, p.realPath, p.thumbnailId from photos p where p.id = ${id.id}"
 
     sql.query[Photo].option.transact(transactor)
   }
