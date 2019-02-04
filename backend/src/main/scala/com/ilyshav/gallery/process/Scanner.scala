@@ -74,10 +74,13 @@ object Scanner {
       blocking: ExecutionContext)(path: Path,
                                   album: Album,
                                   db: Database[F]): F[Unit] = {
-    if (isSupported(path.getFileName.toString))
-      db.savePhoto(path.toString, album.id).flatMap { photo =>
+    if (isSupported(path.getFileName.toString)) {
+
+      // todo
+      db.savePhoto(path.toString, album.id, 500, 600).flatMap { photo =>
         createThumbnail(config, db, blocking)(photo)
-      } else Concurrent[F].unit
+      }
+    } else Concurrent[F].unit
   }
 
   private def createThumbnail[F[_]: Concurrent](config: Config,
