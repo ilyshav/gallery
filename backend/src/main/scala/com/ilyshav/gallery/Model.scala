@@ -3,13 +3,7 @@ package com.ilyshav.gallery
 import java.io.File
 import java.nio.file.{Path, Paths}
 
-import com.ilyshav.gallery.HttpModels.{
-  AlbumDto,
-  AlbumId,
-  PhotoDto,
-  PhotoId,
-  ThumbnailId
-}
+import com.ilyshav.gallery.HttpModels.{AlbumDto, AlbumId, PhotoDto, PhotoId, PhotoSize, ThumbnailId}
 import io.circe.Encoder
 
 object HttpModels {
@@ -17,8 +11,10 @@ object HttpModels {
   case class PhotoId(id: String) extends AnyVal
   case class ThumbnailId(id: String) extends AnyVal
 
+  case class PhotoSize(width: Int, height: Int)
+
   case class AlbumDto(id: AlbumId, name: String)
-  case class PhotoDto(id: PhotoId, name: String, thumbnail: Option[ThumbnailId])
+  case class PhotoDto(id: PhotoId, name: String, thumbnail: Option[ThumbnailId], size: PhotoSize)
 
   case class AlbumContent(albums: List[AlbumDto], photos: List[PhotoDto])
 }
@@ -36,7 +32,7 @@ object PrivateModels {
                    thumbnail: Option[ThumbnailId],
                    width: Int,
                    height: Int) {
-    def toDto() = PhotoDto(id, path, thumbnail)
+    def toDto() = PhotoDto(id, path, thumbnail, PhotoSize(width, height))
     def thumbnailPath(galleryRoot: Path, thumbnailsRoot: Path): File = {
       val photoPath = Paths.get(path)
       val relative = galleryRoot.relativize(photoPath)
@@ -64,6 +60,7 @@ object Encoders {
   implicit val photoIdEncoder: Encoder[PhotoId] = deriveUnwrappedEncoder
   implicit val thumbnailIdEncoder: Encoder[ThumbnailId] = deriveUnwrappedEncoder
 
+  implicit val photoSizeEncoder: Encoder[PhotoSize] = deriveEncoder
   implicit val albumEncoder: Encoder[AlbumDto] = deriveEncoder
   implicit val photoEncoder: Encoder[PhotoDto] = deriveEncoder
 
