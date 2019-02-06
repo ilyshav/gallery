@@ -29,9 +29,6 @@ export default class AlbumDetails extends React.Component<AlbumProps, State> {
     constructor(props: AlbumProps) {
         super(props)
 
-        console.log("album details")
-        console.log(props)
-
         fetch(Api.buildPath(`/albums/${props.albumId}`))
             .then(r => r.json())
             .then(data => {
@@ -46,39 +43,24 @@ export default class AlbumDetails extends React.Component<AlbumProps, State> {
     }
 
     renderLoaded() {
-        
-        var items = [
+        const photos = this.state.photos.map(photo => (
             {
-                src: 'https://placekitten.com/600/400',
-                w: 600,
-                h: 400,
-                thumbnail: 'https://placekitten.com/150/150',
-            },
-            {
-                src: 'https://placekitten.com/1200/900',
-                w: 1200,
-                h: 900,
-                thumbnail: 'https://placekitten.com/150/150'
+                src: Api.buildStaticPath(`/static/photo/${photo.id}`),
+                w: photo.size.width,
+                h: photo.size.height,
+                thumbnail: Api.buildStaticPath(`/static/thumbnail/${photo.thumbnail}`),
             }
-        ];
-
+        ))
 
         const getThumbnailContent = (item) => {
             return (
-              <img src={item.thumbnail} width={150} height={150}/>
+              <img src={item.thumbnail} width={200} height={200}/>
             );
           }
 
         return (<div>
-            <PhotoSwipeGallery items={items} options={[]} thumbnailContent={getThumbnailContent}/>
+            <PhotoSwipeGallery items={photos} options={{}} thumbnailContent={getThumbnailContent}/>
           </div>)
-        
-        // return (<div>
-        //     <b>Photos</b>
-        //     {this.state.photos.map(photo => <PhotoPreview photo={photo} key={photo.id}/>)}
-        //     <b>Albums</b>
-        //     {this.state.albums.map(album => <AlbumPreview album={album} key={album.id}/>)}
-        // </div>)
     }
 
     render() {
