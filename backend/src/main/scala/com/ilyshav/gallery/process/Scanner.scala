@@ -1,5 +1,6 @@
 package com.ilyshav.gallery.process
 
+import java.io.File
 import java.nio.file.{Files, Path}
 import java.util.concurrent.TimeUnit
 
@@ -9,6 +10,7 @@ import com.ilyshav.gallery.{Config, Database}
 import com.ilyshav.gallery.PrivateModels.{Album, Photo}
 import org.slf4j.LoggerFactory
 import fs2.Stream
+import javax.imageio.ImageIO
 import net.coobird.thumbnailator.Thumbnails
 
 import scala.concurrent.ExecutionContext
@@ -74,10 +76,15 @@ object Scanner {
       blocking: ExecutionContext)(path: Path,
                                   album: Album,
                                   db: Database[F]): F[Unit] = {
-    if (isSupported(path.getFileName.toString))
-      db.savePhoto(path.toString, album.id).flatMap { photo =>
-        createThumbnail(config, db, blocking)(photo)
-      } else Concurrent[F].unit
+    if (isSupported(path.getFileName.toString)) {
+
+      for {
+        size <- getPhotoSize(path, blocking)
+        (width, height) = size
+        photo <- db.savePhoto(path.toString, album.id, width, height)
+        _ <- createThumbnail(config, db, blocking)(photo)
+      } yield ()
+    } else Concurrent[F].unit
   }
 
   private def createThumbnail[F[_]: Concurrent](config: Config,
@@ -97,6 +104,22 @@ object Scanner {
       }
       _ <- db.saveThumbnail(photo.id, thumbnailPath.getAbsolutePath)
     } yield ())
+
+  private def getPhotoSize[F[_]: Sync](path: Path, blocking: ExecutionContext)(implicit context: ContextShift[F]): F[(Int, Int)] = {
+    context.evalOn(blocking) {
+      Sync[F].delay { // todo bracket
+        val x = ImageIO.createImageInputStream(new File(path.toString))
+        val reader = ImageIO.getImageReaders(x)
+        reader.asScala.toList.headOption.map { reader =>
+          reader.setInput(x)
+          val width = reader.getWidth(0)
+          val height = reader.getHeight(0)
+          reader.dispose()
+          (width, height)
+        }.getOrElse(throw new RuntimeException("Unsupported image format"))
+      }
+    }
+  }
 
   private def isSupported(filename: String): Boolean = {
     supportedFiles.contains(filename.split('.').last)

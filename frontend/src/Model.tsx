@@ -3,10 +3,16 @@ class Album {
     name: string
 }
 
+class Size {
+    width: number
+    height: number
+}
+
 class Photo {
     id: string
     name: string
     thumbnail?: string
+    size: Size
 }
 
 class AlbumData {

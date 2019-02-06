@@ -7,14 +7,11 @@ export class PhotoDetailsProps {
 
 export default class PhotoDetails extends React.Component<PhotoDetailsProps, any> {
     constructor(props) {
-        console.log("TESTS")
         super(props)
     }
 
     render() {
-        console.log("sdasd")
         console.log(this.props)
-
         const photoPath = Api.buildStaticPath(`/static/photo/${this.props.photoId}`)
 
         return <img src={photoPath}/>

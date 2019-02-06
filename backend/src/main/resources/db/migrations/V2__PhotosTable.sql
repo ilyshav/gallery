@@ -9,6 +9,8 @@ CREATE TABLE photos
     id nvarchar PRIMARY KEY NOT NULL,
     realPath nvarchar,
     albumId nvarchar,
+    width int NOT NULL,
+    height int NOT NULL,
     thumbnailId nvarchar,
     CONSTRAINT photos_to_albums___fk FOREIGN KEY (albumId) REFERENCES albums (id),
     CONSTRAINT photos_to_thumbnail___fk FOREIGN KEY (thumbnailId) REFERENCES thumbnail (id)

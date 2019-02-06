@@ -3,6 +3,10 @@ import { Api } from "../Api";
 import PhotoPreview from "./PhotoPreview";
 import AlbumPreview from "./AlbumPreview";
 
+import 'react-photoswipe/lib/photoswipe.css';
+import {PhotoSwipeGallery} from 'react-photoswipe';
+
+
 export interface AlbumProps {
     albumId: string;
 }
@@ -25,12 +29,10 @@ export default class AlbumDetails extends React.Component<AlbumProps, State> {
     constructor(props: AlbumProps) {
         super(props)
 
-        console.log("album details")
-        console.log(props)
-
         fetch(Api.buildPath(`/albums/${props.albumId}`))
             .then(r => r.json())
             .then(data => {
+                console.log(data)
                 this.setState({photos: data.photos, albums: data.albums, isLoading: false})
             })
             .catch(err => {
@@ -41,12 +43,26 @@ export default class AlbumDetails extends React.Component<AlbumProps, State> {
     }
 
     renderLoaded() {
+        const photos = this.state.photos.map(photo => (
+            {
+                src: Api.buildStaticPath(`/static/photo/${photo.id}`),
+                w: photo.size.width,
+                h: photo.size.height,
+                thumbnail: Api.buildStaticPath(`/static/thumbnail/${photo.thumbnail}`),
+            }
+        ))
+
+        const getThumbnailContent = (item) => {
+            return (
+              <img src={item.thumbnail} width={200} height={200}/>
+            );
+          }
+
         return (<div>
-            <b>Photos</b>
-            {this.state.photos.map(photo => <PhotoPreview photo={photo} key={photo.id}/>)}
             <b>Albums</b>
             {this.state.albums.map(album => <AlbumPreview album={album} key={album.id}/>)}
-        </div>)
+            <PhotoSwipeGallery items={photos} options={{}} thumbnailContent={getThumbnailContent}/>
+          </div>)
     }
 
     render() {

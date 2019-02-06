@@ -48,22 +48,27 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
     sql.query[Album].to[List].transact(transactor)
   }
 
-  def savePhoto(path: String, album: AlbumId): F[Photo] = {
+  def savePhoto(path: String,
+                album: AlbumId,
+                width: Int,
+                height: Int): F[Photo] = {
     val id = UUID.randomUUID().toString
 
     val sql =
       sql"""
-           | insert or ignore into photos(id, realPath, albumId)
-           | values (${id}, ${path}, ${album.id})
+           | insert or ignore into photos(id, realPath, albumId, width, height)
+           | values (${id}, ${path}, ${album.id}, ${width}, ${height})
          """.stripMargin
 
-    sql.update.run.transact(transactor).map(_ => Photo(PhotoId(id), path, None))
+    sql.update.run
+      .transact(transactor)
+      .map(_ => Photo(PhotoId(id), path, thumbnail = None, width, height))
   }
 
   def getPhotos(album: AlbumId): F[List[Photo]] = {
     val sql =
       sql"""
-           |select p.id, p.realPath, p.thumbnailId from photos p
+           |select p.id, p.realPath, p.thumbnailId, width, height from photos p
            |  join albums a on p.albumId = a.id and a.id = ${album.id}
          """.stripMargin
 
@@ -71,7 +76,8 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
   }
 
   def getPhoto(id: PhotoId): F[Option[Photo]] = {
-    val sql = sql"select p.id, p.realPath, p.thumbnailId from photos p where p.id = ${id.id}"
+    val sql =
+      sql"select p.id, p.realPath, p.thumbnailId, p.width, p.height from photos p where p.id = ${id.id}"
 
     sql.query[Photo].option.transact(transactor)
   }
@@ -79,7 +85,11 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
   def getLastFullScan(): F[Option[Instant]] = {
     val sql = sql"select lastFullScan from full_scan_metadata limit 1;"
 
-    sql.query[Long].option.transact(transactor).map(_.map(Instant.ofEpochSecond))
+    sql
+      .query[Long]
+      .option
+      .transact(transactor)
+      .map(_.map(Instant.ofEpochSecond))
   }
 
   def setLastFullScan(ts: Long): F[Unit] = {
@@ -91,8 +101,10 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
   def saveThumbnail(photoId: PhotoId, path: String): F[ThumbnailId] = {
     val id = UUID.randomUUID().toString
 
-    val thumbnailSaveSql = sql"insert into thumbnails(id, realPath) values (${id}, ${path});"
-    val setThumbnailForPhotoSql = sql"update photos set thumbnailId=${id} where id=${photoId.id};"
+    val thumbnailSaveSql =
+      sql"insert into thumbnails(id, realPath) values (${id}, ${path});"
+    val setThumbnailForPhotoSql =
+      sql"update photos set thumbnailId=${id} where id=${photoId.id};"
 
     (for {
       _ <- thumbnailSaveSql.update.run
@@ -101,7 +113,8 @@ class Database[F[_]: Async: ContextShift](transactor: HikariTransactor[F])(
   }
 
   def getThumbnail(thumbnailId: ThumbnailId): F[Option[Thumbnail]] = {
-    val sql = sql"select id, realPath from thumbnails where id=${thumbnailId.id}"
+    val sql =
+      sql"select id, realPath from thumbnails where id=${thumbnailId.id}"
 
     sql.query[Thumbnail].option.transact(transactor)
   }
