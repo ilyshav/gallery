@@ -59,6 +59,8 @@ export default class AlbumDetails extends React.Component<AlbumProps, State> {
           }
 
         return (<div>
+            <b>Albums</b>
+            {this.state.albums.map(album => <AlbumPreview album={album} key={album.id}/>)}
             <PhotoSwipeGallery items={photos} options={{}} thumbnailContent={getThumbnailContent}/>
           </div>)
     }
